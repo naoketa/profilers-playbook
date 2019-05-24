@@ -71,6 +71,15 @@
         creates: /usr/sbin/netdata
       notify: restart netdata
 
+    - name: add percona yum repo
+      yum:
+        name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+        state: present
+
+    - name: install percona toolkit
+      yum:
+        name: "percona-toolkit"
+
   handlers:
     - name: restart netdata
       service:
