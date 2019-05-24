@@ -1,0 +1,81 @@
+- hosts: all
+  become: yes
+  vars:
+    temporary_directory: /home/tmp
+    tools_directory: /home/tools
+  tasks:
+    - name: install packages from yum
+      yum: name={{ item }} state=latest
+      with_items:
+        - vim
+
+    - name: make tmp directory
+      file: 
+        path: "{{temporary_directory}}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: make tools directory
+      file: 
+        path: "{{tools_directory}}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: download kataribe
+      get_url: 
+        url: "https://github.com/matsuu/kataribe/releases/download/v0.3.3/linux_amd64.zip" 
+        dest: "{{temporary_directory}}"
+
+    - name: make tools directory
+      file: 
+        path: "{{tools_directory}}/kataribe"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: extract kataribe
+      unarchive: 
+        src: "{{temporary_directory}}/linux_amd64.zip"
+        dest: "{{tools_directory}}/kataribe"
+        remote_src: yes
+
+    - name: clone netdata
+      git:
+        repo: "https://github.com/netdata/netdata.git"
+        dest: "{{tools_directory}}/netdata"
+        depth: 1
+
+    - name: install packages for netdata from yum
+      yum: name={{ item }} state=latest
+      with_items:
+        - zlib-devel
+        - libuuid-devel
+        - libmnl-devel
+        - gcc
+        - make
+        - git
+        - autoconf
+        - autogen
+        - automake
+        - pkgconfig
+
+    - name: install netdata
+      command: "{{tools_directory}}/netdata/netdata-installer.sh --dont-wait"
+      args:
+        chdir: "{{tools_directory}}/netdata"
+        creates: /usr/sbin/netdata
+      notify: restart netdata
+
+  handlers:
+    - name: restart netdata
+      service:
+        name: "netdata"
+        state: "restarted"
+        enabled: true
+        sleep: 10
+        
