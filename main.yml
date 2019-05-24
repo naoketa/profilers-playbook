@@ -8,6 +8,8 @@
       yum: name={{ item }} state=latest
       with_items:
         - vim
+        - wget
+        - tcpdump
 
     - name: make tmp directory
       file: 
