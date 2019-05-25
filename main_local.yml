@@ -1,0 +1,53 @@
+- hosts: localhost
+  connection: local
+  vars:
+    user: user
+    group: staff
+    temporary_directory: ~/isucon_tmp
+    notify_slack_url: https://github.com/catatsuy/notify_slack/releases/download/v0.3.0/notify_slack-darwin-amd64.tar.gz
+
+  tasks:
+    - name: make tmp directory
+      file: 
+        path: "{{temporary_directory}}"
+        state: directory
+        owner: "{{user}}"
+        group: "{{group}}"
+        mode: 0755
+
+    - name: make notify_slack/etc directory
+      file: 
+        path: "$HOME/etc/"
+        state: directory
+        owner: "{{user}}"
+        group: "{{group}}"
+        mode: 0755
+        
+    - name: download notify_slack
+      get_url:
+        url: "{{notify_slack_url}}"
+        dest: "{{temporary_directory}}"
+
+    - name: extract notify_slack
+      become: yes
+      unarchive: 
+        src: "{{temporary_directory}}/notify_slack-darwin-amd64.tar.gz"
+        dest: "/usr/local/bin/"
+
+    - name: setting notify_slack
+      become: yes
+      file: 
+        path: "/usr/local/bin/notify_slack"
+        state: file
+        owner: "{{user}}"
+        group: admin
+        mode: 0755
+  
+    - name: setting notify_slack
+      copy:
+        src: notify_slack.toml
+        dest: $HOME/etc/notify_slack.toml
+        mode: 0755
+
+    - name: test notify_slack
+      shell: echo "notify_slack sucess by {{user}}:smile:" | notify_slack 

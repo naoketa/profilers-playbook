@@ -1,0 +1,7 @@
+[slack]
+url = ""
+token = ""
+channel = ""
+username = ""
+icon_emoji = ":rocket:"
+interval = "1s"
