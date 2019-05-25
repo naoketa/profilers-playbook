@@ -45,7 +45,7 @@
   
     - name: setting notify_slack
       copy:
-        src: notify_slack.toml
+        src: notify_slack/notify_slack.toml
         dest: $HOME/etc/notify_slack.toml
         mode: 0755
 
