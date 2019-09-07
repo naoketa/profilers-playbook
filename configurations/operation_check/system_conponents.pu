@@ -1,0 +1,36 @@
+@startuml
+
+node "Browser" {
+  [web browser]
+}
+
+node "Server1" {
+  [nginx]
+  folder "Folder" {
+    [static file]
+    note left: exmaple.html, exmaple.jpg
+  }
+}
+
+node "Server2" {
+  [go app1]
+}
+
+node "Server3" {
+  [go app2]
+}
+
+node "Server4" {
+  database "Database" {
+    [mariadb]
+  }
+}
+
+[web browser] --> [nginx] : HTTP
+[nginx] --> [static file]
+[nginx] --> [go app1]
+[nginx] --> [go app2]
+[go app1] --> [mariadb]
+[go app2] --> [mariadb]
+
+@enduml

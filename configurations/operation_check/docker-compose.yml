@@ -1,0 +1,54 @@
+version: '3'
+services:
+  server1:
+    image: nginx:1.16.0
+    depends_on:
+      - server2
+      - server3
+    command: sh -c "sleep 30 && nginx -g \"daemon off;\""  # TODO: workaround(アプリが接続できる状態になるまえに接続することを避ける)
+    ports:
+      - "80:80"
+    volumes:
+      - ./server1/etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./server1/usr/share/nginx/html:/usr/share/nginx/html:ro
+
+  server2:
+    build: ./myapp
+    depends_on:
+      - server4
+    environment:
+      DB_USER: test
+      DB_PASS: test
+      DB_HOST: server4
+      DB_PORT: 3306
+      DB_DATABASE: test
+    command: sh -c "sleep 15 && go run main.go" # TODO: workaround(DB接続できる状態になるまえに接続することを避ける)
+#    ports:
+#      - "8080:8080"
+
+  server3:
+    build: ./myapp
+    depends_on:
+      - server4
+    working_dir: /usr/src/myapp
+    environment:
+      DB_USER: test
+      DB_PASS: test
+      DB_HOST: server4
+      DB_PORT: 3306
+      DB_DATABASE: test
+    command: sh -c "sleep 15 && go run main.go" # TODO: workaround(DB接続できる状態になるまえに接続することを避ける)
+#    ports:
+#      - "8080:8080"
+
+  server4:
+    image: mariadb:10.3
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+#    ports:
+#      - "3306/tcp"
+    volumes:
+      - ./server4/etc/mysql/my.cnf:/etc/mysql/my.cnf

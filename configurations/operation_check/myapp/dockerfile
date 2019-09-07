@@ -1,0 +1,11 @@
+FROM golang:1.12.5
+
+WORKDIR /usr/src/myapp
+COPY ./usr/src/myapp /usr/src/myapp
+
+RUN go get -u "github.com/gorilla/mux" \
+    "github.com/gorilla/context" \
+    "github.com/go-sql-driver/mysql"
+
+EXPOSE 8080
+CMD ["go", "run", "main.go"]
