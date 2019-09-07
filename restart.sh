@@ -1,13 +1,13 @@
 #!/bin/bash
 
 DATE=`date '+%Y%m%d-%H%M%S'`
-LOGDIR=/home/isucon/isubata/logs
+LOGDIR=/root/isucon7-logs
 LOGPATH=$LOGDIR/$DATE
 PPROF_PORT=16061
 PPROF_SAMPLING_TIME=90
 
 mkdir -p $LOGPATH
-rm $LOGDIR/latest
+rm $LOGDIR/latest 2&> /dev/null
 ln -sf $LOGPATH $LOGDIR/latest
 
 # pre todo
@@ -55,10 +55,10 @@ pt-query-digest $MYSQL_LOG/mysql-slow.log > $LOGPATH/pt-query-digest.log
 jq . $LOGPATH/result.json > $LOGPATH/jq-result.log
 bash /home/isucon/isubata/db/check_db.sh > $LOGPATH/check-db.log
 
-#cd $LOGPATH
-#git add .
-#git commit -m "update logs"
-#sudo -u isucon git push
+cd $LOGDIR
+git add .
+git commit -m "update logs"
+git push origin master
 
 echo "END BENCH"
 #echo "END BENCH" | notify_slack
