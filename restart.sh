@@ -1,32 +1,46 @@
 #!/bin/bash
 
 DATE=`date '+%Y%m%d-%H%M%S'`
-LOGPATH=/home/isucon/isubata/logs/$DATE
-export PATH=$PATH:/home/isucon/isubata/tmp
+LOGDIR=/home/isucon/isubata/logs
+LOGPATH=$LOGDIR/$DATE
+PPROF_PORT=16061
+PPROF_SAMPLING_TIME=90
 
-mkdir $LOGPATH
+mkdir -p $LOGPATH
+rm $LOGDIR/latest
+ln -sf $LOGPATH $LOGDIR/latest
+
+# pre todo
+# nginxのlog format変更
+# mysqlのslow log設定の追加
 
 # restart
+echo "PREPARE BENCH" 
 systemctl stop nginx
 systemctl stop isubata.golang
 systemctl stop mysql
 
-mv /var/log/nginx/access.log /var/log/nginx/access-${DATE}.log
-mv /var/lib/mysql/mysqld-slow.log /var/lib/mysql/mysqld-slow-${DATE}.log
+NGINX_LOG=/var/log/nginx
+MYSQL_LOG=/var/log/mysql
+
+mv $NGINX_LOG/access.log $NGINX_LOG/access-${DATE}.log
+mv $MYSQL_LOG/mysql-slow.log $MYSQL_LOG/mysql-slow-${DATE}.log
 
 systemctl start mysql
 systemctl start isubata.golang
 systemctl start nginx
+echo "PREPARED BENCH" 
 
 # initialize
 #/home/isucon/isubata/db/init.sh
 #zcat /home/isucon/isubata/bench/isucon7q-initial-dataset.sql.gz | sudo mysql isubata
 
 # pprof
-# TODO: スクリプトの中に埋め込む方法模索中
-#echo "START pprof"
-#ps aux | grep pprof | grep -v grep | awk '{print $2}' | xargs kill -kill
-#/home/isucon/local/go-1.11/bin/go tool pprof -seconds=120 -http=10.0.2.15:16061 http://127.0.0.1:6060/debug/pprof/profile &
+echo "START pprof"
+if [ `ps aux | grep -v grep | grep pprof | wc -l` -ne 0 ]; then
+  ps aux | grep pprof | grep -v grep | awk '{print $2}' | xargs kill -kill
+fi
+/home/isucon/local/go/bin/go tool pprof -seconds=$PPROF_SAMPLING_TIME -http=0.0.0.0:16061 http://127.0.0.1:6060/debug/pprof/profile > /tmp/pprof.log 2>&1 &
 
 # benchmark
 echo "START BENCH" 
@@ -36,15 +50,15 @@ cd  /home/isucon/isubata/bench
 
 # log
 cd /home/tools/kataribe
-cat /var/log/nginx/access.log | ./kataribe -f kataribe.toml > $LOGPATH/kataribe.log
-pt-query-digest /var/lib/mysql/mysqld-slow.log > $LOGPATH/pt-query-digest.log
+cat $NGINX_LOG/access.log | ./kataribe -f kataribe.toml > $LOGPATH/kataribe.log
+pt-query-digest $MYSQL_LOG/mysql-slow.log > $LOGPATH/pt-query-digest.log
 jq . $LOGPATH/result.json > $LOGPATH/jq-result.log
 bash /home/isucon/isubata/db/check_db.sh > $LOGPATH/check-db.log
 
-cd $LOGPATH
-git add .
-git commit -m "update logs"
-sudo -u isucon git push
+#cd $LOGPATH
+#git add .
+#git commit -m "update logs"
+#sudo -u isucon git push
 
 echo "END BENCH"
 #echo "END BENCH" | notify_slack
