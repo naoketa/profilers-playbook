@@ -4,12 +4,13 @@
     temporary_directory: /home/tmp
     tools_directory: /home/tools
   tasks:
-    - name: install packages from yum
-      yum: name={{ item }} state=latest
+    - name: install packages from apt
+      apt: name={{ item }} state=latest
       with_items:
         - vim
         - wget
         - tcpdump
+        - unzip
 
     - name: make tmp directory
       file: 
@@ -52,34 +53,18 @@
         dest: "{{tools_directory}}/netdata"
         depth: 1
 
-    - name: install packages for netdata from yum
-      yum: name={{ item }} state=latest
+    - name: netdata from apt
+      apt: name={{ item }} state=latest
       with_items:
-        - zlib-devel
-        - libuuid-devel
-        - libmnl-devel
-        - gcc
-        - make
-        - git
-        - autoconf
-        - autogen
-        - automake
-        - pkgconfig
+        - netdata
 
-    - name: install netdata
-      command: "{{tools_directory}}/netdata/netdata-installer.sh --dont-wait"
-      args:
-        chdir: "{{tools_directory}}/netdata"
-        creates: /usr/sbin/netdata
-      notify: restart netdata
-
-    - name: add percona yum repo
-      yum:
-        name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    - name: add percona apt repo
+      apt:
+        deb: "https://repo.percona.com/apt/percona-release_latest.bionic_all.deb"
         state: present
 
     - name: install percona toolkit
-      yum:
+      apt:
         name: "percona-toolkit"
 
   handlers:
